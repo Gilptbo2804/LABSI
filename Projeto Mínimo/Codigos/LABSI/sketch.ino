@@ -1,0 +1,46 @@
+#include <avr/io.h>
+#include <avr/interrupt.h>
+
+ISR(TIMER1_COMPA_vect) {
+    PORTD ^= (1 << PORTD7); 
+}
+
+int ler_ADC(){
+  unsigned char leituraL, leituraH;
+
+  ADCSRA |= (1<<ADSC);
+
+  while ((ADCSRA & (1<<ADSC)) != 0);
+
+  leituraL = ADCL;
+  leituraH = ADCH;
+
+  return ((leituraH<<8) + leituraL);
+}
+
+int main(void) {
+    DDRD = 0b11000000;     
+
+//Timer1
+    TCCR1A = 0b00000000;       // Modo CTC
+    TCCR1B = 0b00001100;       //prescaler = 256
+    OCR1A = 31249;             // 1Hz com Clock a 16MHZ
+    TIMSK1 = 0b00000010;
+
+  //Timer0
+  TCCR0A = 0b10000011;
+  TCCR0B = 0b00000101;
+  OCR0A = 0;
+
+//ADC
+ADMUX = 0b01000000;
+ADCSRA = 0b10000111;
+
+    sei();
+
+    while (1) {
+
+      OCR0A = ler_ADC();
+        
+    }
+}
