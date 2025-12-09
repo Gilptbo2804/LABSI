@@ -1,0 +1,9 @@
+../Core/Inc/systeminit.h:7:6:clockinit	8	static
+../Core/Inc/systeminit.h:38:6:init	0	static
+../Core/Inc/timerinit.h:9:7:timer7init	0	static,ignoring_inline_asm
+../Core/Inc/timerinit.h:24:7:timer1init	0	static
+../Core/Inc/timerinit.h:62:7:timer6init	0	static,ignoring_inline_asm
+../Core/Inc/timerinit.h:79:7:setdutycycle	0	static
+../Core/Inc/mysin.h:112:7:fastsin	8	static
+../Core/Src/main.c:12:6:TIM7_IRQHandler	40	static
+../Core/Src/main.c:56:5:main	8	static
