@@ -92,44 +92,7 @@ volatile float Ia = 0.0f;
 volatile float Ib = 0.0f;
 volatile float Ic = 0.0f;
 volatile uint16_t menorqoffset=0;
-//float offset_bias=2048.0f;
 
-
-void ADC1_2_IRQHandler(){
-
-    if(ADC1->ISR & ADC_ISR_EOC){
-        uint16_t adc_Ia= ADC1->DR;
-        uint16_t adc_Ib= ADC2->DR;
-
-
-	//	Ia = ((float)adc_Ia - offset_bias) * 0.01678f;
-	//	Ib = ((float)adc_Ib - offset_bias) * 0.01678f;
-	//	Ic = -(Ia + Ib);
-
-    Ia=(float)adc_Ia;
-    Ib=(float)adc_Ib;
-  //  Ic=(float)adc_Ic;
-
-    if(Ia<2500){
-    	menorqoffset++;
-    }
-        // debug I2C
-
-    // ---------------------------------------------------------
-            // 3. LÓGICA DO BUFFER (Gravação Circular)
-            // ---------------------------------------------------------
-            buffer_Ia[buffer_index] = Ia; // Guarda o valor atual
-            buffer_index++;               // Avança para a próxima posição
-
-            // Se chegámos ao fim do array, volta ao início (Loop Infinito)
-            if (buffer_index >= BUFFER_SIZE) {
-                buffer_index = 0;
-            }
-            // ---------------------------------------------------------
-
-    }
-
-}/*
 void ADC1_2_IRQHandler(){
     if(ADC1->ISR & ADC_ISR_JEOC){
         ADC1->ISR |= ADC_ISR_JEOC;
@@ -151,13 +114,13 @@ void ADC1_2_IRQHandler(){
 
            Ia=(float)adc_Ia;
            Ib=(float)adc_Ib;
-         //  Ic=(float)adc_Ic;
+          Ic=(float)adc_Ic;
 
                // debug I2C
 
     }
 }
-*/
+
 
 
 volatile uint32_t clk_freq;

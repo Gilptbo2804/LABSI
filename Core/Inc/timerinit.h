@@ -58,7 +58,7 @@
  //	TIM1->CCR2 = (8499 *0.4);
  //	TIM1->CCR3 = (8499 *0.1);
 
- 	TIM1->CCR4=ARR_VALUE;
+ 	TIM1->CCR4=ARR_VALUE-1;
 
  	//TIM1->RCR = 1; // Este registo é o repetition Counter, supostamente garante que o ADC
  	// só dispara no "Underflow"

@@ -174,30 +174,29 @@ void opamp_init(){
 				| 0b10 << OPAMP_CSR_VMSEL_Pos
 				| OPAMP_CSR_OPAMPxEN;
 
-	OPAMP2->CSR |= ( 0b00001 << OPAMP_CSR_PGGAIN_Pos)
-					| OPAMP_CSR_OPAMPINTEN
+	OPAMP2->CSR |= ( 0b00011 << OPAMP_CSR_PGGAIN_Pos)
 					| 0b00 << OPAMP_CSR_VPSEL_Pos
-					| 0b00 << OPAMP_CSR_VMSEL_Pos
+					| 0b10 << OPAMP_CSR_VMSEL_Pos
 					| OPAMP_CSR_OPAMPxEN;
 
 
-	OPAMP3->CSR |= ( 0b00001 << OPAMP_CSR_PGGAIN_Pos)
+	OPAMP3->CSR |= ( 0b00011 << OPAMP_CSR_PGGAIN_Pos)
 					| OPAMP_CSR_OPAMPINTEN
 					| 0b00 << OPAMP_CSR_VPSEL_Pos
-					| 0b00 << OPAMP_CSR_VMSEL_Pos
+					| 0b10 << OPAMP_CSR_VMSEL_Pos
  					| OPAMP_CSR_OPAMPxEN;
 
 // Acho que o terceiro não é necessário, mas tá aqui na mesma.
 
 }
-// ADC para basic channels
+
 
 void adc_init(){
-    RCC->AHB2ENR |= RCC_AHB2ENR_ADC12EN;
+    RCC->AHB2ENR |= RCC_AHB2ENR_ADC12EN | (1<<14);
 
 
 
-	RCC->CCIPR|= 0b01 << RCC_CCIPR_ADC12SEL_Pos;
+	RCC->CCIPR|= 0b01 << RCC_CCIPR_ADC12SEL_Pos | (0b01<<30U) ;
 
 
     ADC1->CR &= ~ADC_CR_ADEN;
@@ -218,49 +217,42 @@ void adc_init(){
     ADC2->CR |= ADC_CR_ADCAL;
        while ((ADC1->CR & ADC_CR_ADCAL ) || (ADC2->CR & ADC_CR_ADCAL ));
 
-
-       // ADC1
-           ADC1->CFGR &= ~(ADC_CFGR_JQDIS);
-           ADC1->CFGR |= (0b01 << ADC_CFGR_EXTEN_Pos)
-                         | (0 << ADC_CFGR_EXTSEL_Pos);   // External triggers for regular channels for ADC1
-
-// pag 618 do datasheet, isto é o que liga o tim1 ao adc
-
-           // ADC2
-           ADC2->CFGR &= ~(ADC_CFGR_JQDIS);           // Limpar bits EXTSEL antigos
-           ADC2->CFGR |= (0b01 << ADC_CFGR_EXTEN_Pos)  // Trigger detection na Rising Edge
-                         | (0 << ADC_CFGR_EXTSEL_Pos);  // 10 = TIM1_TRGO2
-
-
     ADC12_COMMON->CCR |= ADC_CCR_VREFEN;
 
-            ADC1->SQR1 &= ~(0x1F << ADC_SQR1_SQ1_Pos); // Limpar bits antigos
-            ADC1->SQR1 |= (3 << ADC_SQR1_SQ1_Pos);
+			ADC1->JSQR |= (3 << ADC_JSQR_JSQ1_Pos)    // Define Canal 13 como 1ª conversão
+						| (0b01 << ADC_JSQR_JEXTEN_Pos) // Trigger: Rising Edge
+						|  (0 << ADC_JSQR_JEXTSEL_Pos)    // Source: 00000 = TIM1_TRGO
+						|  (0 << ADC_JSQR_JL_Pos);        // Sequence Length = 1 conversão
 
             // Configurar Sample Time para o Canal 13 (Recomendado 24.5 ou 47.5 ciclos para canais internos)
             // Em adc_init():
             ADC1->SMPR2 |= (0b010 << ADC_SMPR2_SMP13_Pos); // 12.5 ciclos
 
-
-
-            // ADC2 deve ler o Canal 16 (Saída interna do OpAmp2 / Ib)
-            ADC2->SQR1 &= ~(0x1F << ADC_SQR1_SQ1_Pos); // Limpar bits antigos
-            ADC2->SQR1 |= (16 << ADC_SQR1_SQ1_Pos);
+			ADC2->JSQR |= (3 << ADC_JSQR_JSQ1_Pos)
+						| (18 << ADC_JSQR_JSQ2_Pos)
+						| (0b01 << ADC_JSQR_JEXTEN_Pos)
+						|  (0 << ADC_JSQR_JEXTSEL_Pos)
+						|  (1 << ADC_JSQR_JL_Pos);
 
             ADC2->SMPR2 |= (0b010 << ADC_SMPR2_SMP16_Pos); // 12.5 ciclos
 
+
+		ADC1->ISR |= ADC_ISR_ADRDY; // Limpar flag antiga
+		ADC2->ISR |= ADC_ISR_ADRDY; // Limpar flag antiga
 
 
     ADC1->CR |= ADC_CR_ADEN;
     ADC2->CR |= ADC_CR_ADEN;
     while( ( (ADC1->ISR & ADC_ISR_ADRDY) && (ADC2->ISR & ADC_ISR_ADRDY) ) == 0 );
 
-    ADC1->IER |= ADC_IER_EOCIE;
+    ADC1->IER |= ADC_IER_JEOCIE;
 
     NVIC_EnableIRQ(ADC1_2_IRQn);
 
-    ADC1->CR |= ADC_CR_ADSTART;
-    ADC2->CR |= ADC_CR_ADSTART;
+    ADC1->CR |= ADC_CR_JADSTART;
+    ADC2->CR |= ADC_CR_JADSTART;
 
 
 }
+
+
