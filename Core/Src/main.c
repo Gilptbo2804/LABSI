@@ -91,7 +91,7 @@ void TIM7_DAC_IRQHandler(){
 volatile float Ia = 0.0f;
 volatile float Ib = 0.0f;
 volatile float Ic = 0.0f;
-volatile uint16_t menorqoffset=0;
+volatile uint16_t debugIa=0,debugIb=0,debugIc=0;
 
 void ADC1_2_IRQHandler(){
     if(ADC1->ISR & ADC_ISR_JEOC){
@@ -106,15 +106,14 @@ void ADC1_2_IRQHandler(){
 
         uint16_t adc_Ic = ADC2->JDR2;
 
+		debugIa=adc_Ia;
+		debugIb=adc_Ib;
+		debugIc=adc_Ic;
 
 
-       	//	Ia = ((float)adc_Ia - offset_bias) * 0.01678f;
-       	//	Ib = ((float)adc_Ib - offset_bias) * 0.01678f;
-       	//	Ic = -(Ia + Ib);
-
-           Ia=(float)adc_Ia;
-           Ib=(float)adc_Ib;
-          Ic=(float)adc_Ic;
+		Ia=((float)adc_Ia * 0.029373) - 74.0204;
+		Ib=((float)adc_Ib * 0.029373) - 74.0204;
+		Ic=((float)adc_Ic * 0.029373) - 74.0204;
 
                // debug I2C
 
