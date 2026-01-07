@@ -58,14 +58,14 @@
  //	TIM1->CCR2 = (8499 *0.4);
  //	TIM1->CCR3 = (8499 *0.1);
 
- 	TIM1->CCR4=ARR_VALUE-1;
+ 	TIM1->CCR4=ARR_VALUE-1; // trigger no pico da onda ( Low side current sensing )
+ 	// Aos poucos vou usando cada vez menos "Magic Numbers" :P
 
- 	//TIM1->RCR = 1; // Este registo é o repetition Counter, supostamente garante que o ADC
- 	// só dispara no "Underflow"
+	TIM1->CR1 |= (0b11 << TIM_CR1_CMS_Pos); //Do Datasheet:Center-aligned mode 3. The counter counts up and down alternatively. Output compare
+	//interrupt flags of channels configured in output (CCxS = 00 in TIMx_CCMRx register) are
+	//set both when the counter is counting up or down.
 
-	TIM1->CR1 |= (0b11 << TIM_CR1_CMS_Pos);
-
-	TIM1->CR2 |= (0b0111 << TIM_CR2_MMS_Pos); //
+	TIM1->CR2 |= (0b0111 << TIM_CR2_MMS_Pos); //Do Datasheet:Compare - tim_oc4refc signal is used as trigger output (tim_trgo)
 
 
 
@@ -97,38 +97,38 @@
  void setdutycycle(float cycle1, float cycle2, float cycle3) {
 
 
-			if(cycle1>1.0f){
+	if(cycle1>1.0f){
+		cycle1=1.0f;
+	}
 
-			cycle1=1.0f;
-			}
+	if (cycle1<0.0f){
+		cycle1=0.0f;
+	}
 
-			if (cycle1<0.0f){
-			cycle1=0.0f;
-			}
+	if(cycle2>1.0f){
 
-			if(cycle2>1.0f){
+	cycle2=1.0f;
 
-			cycle2=1.0f;
+	}
+	if (cycle2<0.0f){
 
-			}  if (cycle2<0.0f){
+	cycle2=0.0f;
 
-			cycle2=0.0f;
+	}
 
-			}
+	if(cycle3>1.0f){
 
-			if(cycle3>1.0f){
+	cycle3=1.0f;
 
-			cycle3=1.0f;
+	} if (cycle3<0.0f){
 
-			} if (cycle3<0.0f){
+	cycle3=0.0f;
 
-			cycle3=0.0f;
-
-			}
+	}
 
 
-		TIM1->CCR1 = (cycle1 * ARR_VALUE);// >> 10;
-		TIM1->CCR2 = (cycle2 * ARR_VALUE);// >> 10;
-		TIM1->CCR3 = (cycle3 * ARR_VALUE);// >> 10;
+	TIM1->CCR1 = (cycle1 * ARR_VALUE);// >> 10;
+	TIM1->CCR2 = (cycle2 * ARR_VALUE);// >> 10;
+	TIM1->CCR3 = (cycle3 * ARR_VALUE);// >> 10;
 
   }

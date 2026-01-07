@@ -142,24 +142,8 @@ void init(){
 	GPIOB->MODER &= ~(0x3 << GPIO_MODER_MODE1_Pos);
 	GPIOB->MODER |= (0b11 << GPIO_MODER_MODE1_Pos);
 
-	//AI
-
-	// 2. CONFIGURAR PB6 (SCL)
-	GPIOB->MODER  &= ~(3 << GPIO_MODER_MODE6_Pos);  // Limpar
-	GPIOB->MODER  |=  (2 << GPIO_MODER_MODE6_Pos);  // Modo: Alternate Function (10)
-	GPIOB->OTYPER |=  (1 << GPIO_OTYPER_OT6_Pos);   // Output Type: Open Drain (IMPORTANTE!)
-	GPIOB->PUPDR  |=  (1 << GPIO_PUPDR_PUPD6_Pos);  // Pull-Up: Ligar resistência interna
-	GPIOB->AFR[0] |=  (4 << GPIO_AFRL_AFSEL6_Pos);  // Ligar ao periférico I2C1 (AF4)
-
-	// 3. CONFIGURAR PB7 (SDA)
-	GPIOB->MODER  &= ~(3 << GPIO_MODER_MODE7_Pos);
-	GPIOB->MODER  |=  (2 << GPIO_MODER_MODE7_Pos);
-	GPIOB->OTYPER |=  (1 << GPIO_OTYPER_OT7_Pos);   // Open Drain
-	GPIOB->PUPDR  |=  (1 << GPIO_PUPDR_PUPD7_Pos);  // Pull-Up
-	GPIOB->AFR[0] |=  (4 << GPIO_AFRL_AFSEL7_Pos);  // Ligar ao periférico I2C1 (AF4)
-
-
-
+	GPIOB->MODER &= ~(0x3 << GPIO_MODER_MODE12_Pos);
+	GPIOB->MODER |= (0b11 << GPIO_MODER_MODE12_Pos);
 
 
 }
@@ -219,10 +203,11 @@ void adc_init(){
 
     ADC12_COMMON->CCR |= ADC_CCR_VREFEN;
 
-			ADC1->JSQR |= (3 << ADC_JSQR_JSQ1_Pos)    // Define Canal 13 como 1ª conversão
+			ADC1->JSQR |= (3 << ADC_JSQR_JSQ1_Pos)    //
+						| (11 << ADC_JSQR_JSQ2_Pos)  // IN11, PB12 Leitura hall
 						| (0b01 << ADC_JSQR_JEXTEN_Pos) // Trigger: Rising Edge
 						|  (0 << ADC_JSQR_JEXTSEL_Pos)    // Source: 00000 = TIM1_TRGO
-						|  (0 << ADC_JSQR_JL_Pos);        // Sequence Length = 1 conversão
+						|  (1 << ADC_JSQR_JL_Pos);        // 2 conversões
 
             // Configurar Sample Time para o Canal 13 (Recomendado 24.5 ou 47.5 ciclos para canais internos)
             // Em adc_init():
