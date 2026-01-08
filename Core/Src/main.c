@@ -21,12 +21,6 @@ Ratio = VOLTS/Hz(max)= 14.8/1628 = 0.007789
 
 #define OFFSET 1260
 
-// Valores lidos pelo ADC
-#define BUFFER_SIZE 6000        // Tamanho do buffer (ajusta conforme necessário)
-
-volatile float buffer_Ia[BUFFER_SIZE],buffer_Ib[BUFFER_SIZE],buffer_Ic[BUFFER_SIZE];  // O Array onde guardamos os valores
-volatile uint16_t buffer_index = 0;     // O índice atual (onde vamos escrever)
-
 
 volatile float target_hz=35.0f;
 volatile uint16_t counter=0,seconds;
@@ -79,10 +73,10 @@ void TIM7_DAC_IRQHandler(){
 
 
 		target_hz = 35.0f + (seconds * 5.0f);
-
+/*
 if (target_hz>80){
 	target_hz=80;
-}
+}*/
 
 
 		TIM7->SR &= ~TIM_SR_UIF;
@@ -90,10 +84,12 @@ if (target_hz>80){
 
 }
 
+
 volatile float Ia = 0.0f;
 volatile float Ib = 0.0f;
 volatile float Ic = 0.0f;
 volatile float Pos = 0.0f;
+volatile float pos_temp = 0.0f;
 volatile uint16_t debugIa=0,debugIb=0,debugIc=0,debugPos=0;
 
 void ADC1_2_IRQHandler(){
@@ -123,13 +119,18 @@ void ADC1_2_IRQHandler(){
         debugIb=0.1*adc_Ib+(1-0.10)*debugIb;
         debugIc=0.1*adc_Ic+(1-0.10)*debugIc;
 
+
 		Ia=((float)debugIa * 0.029373) - 73.844224357467;
 		Ib=((float)debugIb * 0.029373) - 73.668130469894;
 		Ic=((float)debugIc * 0.029373) - 73.785526394942;
 
+		//debugPos=adc_Pos;
+		pos_temp=0.1*adc_Pos+(1-0.10)*pos_temp;
 
+		if (pos_temp < 184) pos_temp = 184;
+		if (pos_temp > 3742) pos_temp = 3742;
 
-		Pos=((float)adc_Pos*360)/4096;
+		Pos = (pos_temp - 184) * (360.0f / (3742 - 184));
 
     }
 }
