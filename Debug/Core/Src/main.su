@@ -6,9 +6,8 @@
 ../Core/Inc/timerinit.h:26:7:timer1init	0	static
 ../Core/Inc/timerinit.h:80:7:timer6init	0	static,ignoring_inline_asm
 ../Core/Inc/timerinit.h:97:7:setdutycycle	0	static
-../Core/Inc/mysin.h:112:7:fastsin	8	static
-../Core/Inc/mysin.h:229:7:fastcos	8	static
-../Core/Src/main.c:31:6:TIM7_IRQHandler	40	static
-../Core/Src/main.c:100:6:ADC1_2_IRQHandler	48	static
-../Core/Src/main.c:161:6:alinharsensor	8	static
-../Core/Src/main.c:183:5:main	8	static
+../Core/Src/main.c:40:6:TIM7_IRQHandler	0	static
+../Core/Src/main.c:69:6:ADC1_2_IRQHandler	40	static
+../Core/Src/main.c:157:6:alinharsensor	8	static
+../Core/Src/main.c:187:6:teste_geracao_onda	16	static,ignoring_inline_asm
+../Core/Src/main.c:222:5:main	8	static

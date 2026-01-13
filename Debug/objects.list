@@ -1,4 +1,6 @@
+"./Core/Src/focalgorithm.o"
 "./Core/Src/main.o"
+"./Core/Src/mysin.o"
 "./Core/Src/syscalls.o"
 "./Core/Src/sysmem.o"
 "./Core/Src/system_stm32g4xx.o"

@@ -2,11 +2,13 @@
 #include "systeminit.h"
 #include "timerinit.h"
 #include "mysin.h"
+#include "focalgorithm.h"
 
-
+volatile uint32_t clk_freq;
 #define PI 3.141592653589793f
 #define VF_RATIO 0.009090909f
 #define V_BOOST_OFFSET     1.5f
+#define V_BUS 14.8f
 /* Contas para este ratio :
 
 RPM(max)= KV * VOLTS = 1100*14.8 = 16280 RPM
@@ -22,66 +24,31 @@ Ratio = VOLTS/Hz(max)= 14.8/1628 = 0.007789
 #define OFFSET 1260
 
 
+#define ADC_MIN_VAL   184.0f    // Leitura a 0 graus
+#define ADC_MAX_VAL   3742.0f   // Leitura a 360 graus
+#define ADC_RANGE     (ADC_MAX_VAL - ADC_MIN_VAL) // = 3558.0f
+#define PARPOLOS 7
 
-
+volatile float offset_eletricoglobal=0.0f;
 
 volatile float target_hz=35.0f;
 volatile uint16_t counter=0,seconds;
 
+volatile uint8_t flag_motor=0; // 0 Parado, 1 Alinhamento, 2 Andamento
+
+
 void TIM7_DAC_IRQHandler(){
 
-	static float angle=0.0f;
-
-		volatile float stepcounter=0.0f,cycle1=0,cycle2=0,cycle3=0;
-	float amplitude = 0.0f;
 	//float tensao;
 
     if (TIM7->SR & TIM_SR_UIF) {
 
-    	stepcounter=(target_hz*(2*PI))/20000.f;
-
-    	angle+=stepcounter;
-    	if( angle >= (2*PI)){
-
-    		angle -= (2*PI);
-
-    	}
-
-    	amplitude=target_hz*VF_RATIO;
-
-
-
-    	amplitude=(amplitude/14.7991f)+0.1f; // + 0.1f offset
-
-
-    //	if(amplitude<0.10f) amplitude=0.10f; // Tensão mínima de arranque
-    	if(amplitude>0.96f) amplitude=0.96f; // tem que ser devido ao bootstraping,
-    										 // valor escolhido através do osciloscópio
-
-		cycle1=(fastsin(angle)*amplitude*0.5f)+0.5f;
-		cycle2=(fastsin(angle+(2*PI/3))*amplitude*0.5f)+0.5f;
-		cycle3=(fastsin(angle-(2*PI/3))*amplitude*0.5f)+0.5f;
-
-
-
-		setdutycycle(cycle1, cycle2, cycle3);
-		//setdutycycle(0.5f, 0.4f, 0.4f);
-
-		counter++;
+    			counter++;
 
 		if(counter>=20000){
 			seconds++;
 			counter=0;
 		}
-
-
-		target_hz = 35.0f + (seconds * 5.0f);
-
-if (target_hz>80){
-	target_hz=80;
-}
-
-
 		TIM7->SR &= ~TIM_SR_UIF;
     }
 
@@ -91,17 +58,20 @@ if (target_hz>80){
 volatile float Ia = 0.0f;
 volatile float Ib = 0.0f;
 volatile float Ic = 0.0f;
-volatile float Pos = 0.0f;
+volatile float Posgraus = 0.0f;
 volatile float pos_temp = 0.0f;
 volatile float OffsetIa=0.157672867,OffsetIb=0.172648802,OffsetIc=0.203955188,debugPos=0;
-
+volatile float theta_mec=0.0f,theta_e=0.0f;
 volatile float testecorrentes=0;
+volatile float duty_a,duty_b,duty_c;
+
 
 void ADC1_2_IRQHandler(){
     if(ADC1->ISR & ADC_ISR_JEOC){
         ADC1->ISR |= ADC_ISR_JEOC;
 
         GPIOB->ODR ^= GPIO_ODR_OD4;
+
 
         uint16_t adc_Ia = ADC1->JDR1;
 
@@ -111,7 +81,6 @@ void ADC1_2_IRQHandler(){
 
 
         uint16_t adc_Ic = ADC2->JDR2;
-
 
         /*
 		debugIa=adc_Ia;
@@ -126,9 +95,12 @@ void ADC1_2_IRQHandler(){
 		Ib=((float)adc_Ib * 0.029373) - 73.668130469894;
 		Ic=((float)adc_Ic * 0.029373) - 73.785526394942;
 
+		/*
+		if (flag_motor==2){
 		OffsetIa=0.000001*Ia+(1-0.000001)*OffsetIa;
 		OffsetIb=0.000001*Ib+(1-0.000001)*OffsetIb;
 		OffsetIc=0.000001*Ic+(1-0.000001)*OffsetIc;
+		}*/
 
 		Ia=Ia-OffsetIa;
 		Ib=Ib-OffsetIb;
@@ -138,47 +110,75 @@ void ADC1_2_IRQHandler(){
 		//debugPos=adc_Pos;
 		pos_temp=0.1*adc_Pos+(1-0.10)*pos_temp;
 
-		if (pos_temp < 184) pos_temp = 184;
-		if (pos_temp > 3742) pos_temp = 3742;
+		if (pos_temp < ADC_MIN_VAL) pos_temp = ADC_MIN_VAL;
+		if (pos_temp > ADC_MAX_VAL) pos_temp = ADC_MAX_VAL;
 
-		Pos = (pos_temp - 184) * (360.0f / (3742 - 184));
-
+		//debug
+		Posgraus = (pos_temp - ADC_MIN_VAL) * (360.0f / (ADC_MAX_VAL - ADC_MIN_VAL));
 		testecorrentes=Ia+Ib+Ic;
+		//******************************************************************************
 
+
+		theta_mec=((pos_temp - ADC_MIN_VAL) / ADC_RANGE) * (2.0f * PI); // normalizado
+		theta_e = (theta_mec*PARPOLOS) - offset_eletricoglobal;
+
+		while (theta_e < 0.0f) theta_e += (2.0f * PI);
+		while (theta_e >= (2.0f * PI)) theta_e -= (2.0f * PI);
+
+// FOC
+		if (flag_motor == 2) {
+		clarke(Ia,Ib,Ic);
+
+		parke(I_alpha,I_beta,fastsin(theta_e),fastcos(theta_e));
+
+		current_control_pi();
+
+		inv_park(V_d,V_q,fastsin(theta_e),fastcos(theta_e));
+
+		inv_clarke(V_alpha,V_beta);
+
+		duty_a = (Va / V_BUS) + 0.5f;
+		duty_b = (Vb / V_BUS) + 0.5f;
+		duty_c = (Vc / V_BUS) + 0.5f;
+
+			if (duty_a > 0.95f) duty_a = 0.95f; else if (duty_a < 0.05f) duty_a = 0.05f;
+			if (duty_b > 0.95f) duty_b = 0.95f; else if (duty_b < 0.05f) duty_b = 0.05f;
+			if (duty_c > 0.95f) duty_c = 0.95f; else if (duty_c < 0.05f) duty_c = 0.05f;
+
+
+		setdutycycle(duty_a, duty_b, duty_c);
+}
     }
 }
 
 
-#define ADC_MIN_VAL   184.0f    // Leitura a 0 graus
-#define ADC_MAX_VAL   3742.0f   // Leitura a 360 graus
-#define ADC_RANGE     (ADC_MAX_VAL - ADC_MIN_VAL) // = 3558.0f
-#define PARPOLOS 7
 
-volatile uint8_t flag_motor=0; // 0 Parado, 1 Alinhamento, 2 Andamento
-
-volatile uint32_t clk_freq;
 
 void alinharsensor(){
 
 	flag_motor=1;
+	counter = 0;
+	seconds = 0;
+
 
 	setdutycycle(0.6f, 0.5f, 0.5f);
 
 	while(seconds<3);
 
-	uint16_t align_posraw = ADC1->JDR2;
+	uint16_t alinhar_posraw = ADC1->JDR2;
 
-	float theta_mec = ((((float)align_posraw) - ADC_MIN_VAL) / ADC_RANGE) * (2.0f * PI);
+	float theta_mec = ((((float)alinhar_posraw) - ADC_MIN_VAL) / ADC_RANGE) * (2.0f * PI);
 
-	uint16_t offset_eletrico = theta_mec * PARPOLOS;
+	float offset_eletrico = theta_mec * PARPOLOS;
 
 		while(offset_eletrico >= (2.0f * PI)) offset_eletrico -= (2.0f * PI);
 		while(offset_eletrico < 0.0f)         offset_eletrico += (2.0f * PI);
 
+	offset_eletricoglobal=offset_eletrico;
+
 		setdutycycle(0, 0, 0);
 		flag_motor=2;
 }
-
 
 int main(void)
 {
@@ -190,7 +190,10 @@ int main(void)
 	opamp_init();
 	adc_init();
 
-	//alinharsensor();
+	alinharsensor();
+
+	teste_geracao_onda();
+
 	while (1)
   {
 //empt

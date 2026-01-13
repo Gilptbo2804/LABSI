@@ -1,0 +1,5 @@
+../Core/Src/focalgorithm.c:17:6:clarke	0	static
+../Core/Src/focalgorithm.c:28:6:parke	0	static
+../Core/Src/focalgorithm.c:36:6:inv_park	0	static
+../Core/Src/focalgorithm.c:41:6:inv_clarke	0	static
+../Core/Src/focalgorithm.c:57:6:current_control_pi	0	static
