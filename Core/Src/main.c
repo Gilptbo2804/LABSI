@@ -227,7 +227,7 @@ int main(void)
 	setdutycycle(0.53f, 0.48f, 0.48f);
 	while(seconds<2);
 	//offset_eletricoglobal=2.8308754f;
-	offset_eletricoglobal=2.2308754f;
+	offset_eletricoglobal=2.1308754f;
 
 
 	flag_motor=2;

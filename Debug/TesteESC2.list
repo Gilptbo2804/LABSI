@@ -2168,7 +2168,7 @@ int main(void)
  80014ac:	2b01      	cmp	r3, #1
  80014ae:	d9fa      	bls.n	80014a6 <main+0x32>
 	//offset_eletricoglobal=2.8308754f;
-	offset_eletricoglobal=2.2308754f;
+	offset_eletricoglobal=2.1308754f;
  80014b0:	4b08      	ldr	r3, [pc, #32]	@ (80014d4 <main+0x60>)
  80014b2:	4a09      	ldr	r2, [pc, #36]	@ (80014d8 <main+0x64>)
  80014b4:	601a      	str	r2, [r3, #0]
@@ -2189,7 +2189,7 @@ int main(void)
  80014cc:	3f07ae14 	.word	0x3f07ae14
  80014d0:	200000ee 	.word	0x200000ee
  80014d4:	200000f4 	.word	0x200000f4
- 80014d8:	400ec6aa 	.word	0x400ec6aa
+ 80014d8:	40086043 	.word	0x40086043
  80014dc:	200000ec 	.word	0x200000ec
 
 080014e0 <fastsin>:
