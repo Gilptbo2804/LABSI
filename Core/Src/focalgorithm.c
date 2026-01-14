@@ -11,6 +11,7 @@ volatile float V_beta = 0.0f;
 volatile float Va = 0.0f;
 volatile float Vb = 0.0f;
 volatile float Vc = 0.0f;
+volatile float I_alpha,I_beta,I_d,I_q;
 
 
 
@@ -46,12 +47,12 @@ void inv_clarke(float V_alpha, float V_beta) {
 
 
 //PI CONTROLS
-volatile float I_alpha,I_beta,I_d,I_q;
+
 float V_d, V_q;
 float Id_ref = 0.0f;
-float Iq_ref = 1.0f; // 2 Amperes de força
-// Ganhos do PI (Têm de ser sintonizados!)
-float Kp = 0.01f, Ki = 0.0f;
+float Iq_ref = 0.5f; // 2 Amperes de força
+// Ganhos do PI (Têm de ser sintonizados!) kp=0.01 ki=0.005
+float Kp = 0.1f, Ki = 0.001f;
 float integral_d = 0, integral_q = 0;
 
 void current_control_pi() {
@@ -61,7 +62,14 @@ void current_control_pi() {
 
     // Integral (com anti-windup simplificado)
     integral_d += err_d * Ki;
-    integral_q += err_q * Ki;
+	integral_q += err_q * Ki;
+
+
+
+        if(integral_d > 10.0f) integral_d = 10.0f; else if(integral_d < -10.0f) integral_d = -10.0f;
+        if(integral_q > 10.0f) integral_q = 10.0f; else if(integral_q < -10.0f) integral_q = -10.0f;
+
+
 
     // Saída (Voltagem necessária nos eixos D e Q)
     V_d = (err_d * Kp) + integral_d;

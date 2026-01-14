@@ -66,6 +66,10 @@ volatile float testecorrentes=0;
 volatile float duty_a,duty_b,duty_c;
 
 
+volatile float angulo_aberto = 0.0f;
+volatile float velocidade_aberta = 0.002f; // Mantém a velocidade
+volatile float tensao_teste = 0.5f;
+
 void ADC1_2_IRQHandler(){
     if(ADC1->ISR & ADC_ISR_JEOC){
         ADC1->ISR |= ADC_ISR_JEOC;
@@ -91,9 +95,9 @@ void ADC1_2_IRQHandler(){
 
 
 
-		Ia=((float)(adc_Ia) * 0.029373) - 73.844224357467;
-		Ib=((float)adc_Ib * 0.029373) - 73.668130469894;
-		Ic=((float)adc_Ic * 0.029373) - 73.785526394942;
+		Ia=-(((float)(adc_Ia) * 0.029373) - 73.844224357467);
+		Ib=-(((float)adc_Ib * 0.029373) - 73.668130469894);
+		Ic=-(((float)adc_Ic * 0.029373) - 73.785526394942);
 
 		/*
 		if (flag_motor==2){
@@ -106,6 +110,15 @@ void ADC1_2_IRQHandler(){
 		Ib=Ib-OffsetIb;
 		Ic=Ic-OffsetIc;
 
+//fusível por software
+		if (flag_motor == 2) {
+		    if (Ia > 5.0f || Ia < -5.0f || Ib > 5.0f || Ib < -5.0f) {
+		        flag_motor = 0;
+		        setdutycycle(0.5f, 0.5f, 0.5f);
+		        TIM1->BDTR &= ~TIM_BDTR_MOE;
+		        while(1); // Morte térmica do código
+		    }
+		}
 
 		//debugPos=adc_Pos;
 		pos_temp=0.1*adc_Pos+(1-0.10)*pos_temp;
@@ -126,6 +139,7 @@ void ADC1_2_IRQHandler(){
 		while (theta_e >= (2.0f * PI)) theta_e -= (2.0f * PI);
 
 // FOC
+/*
 		if (flag_motor == 2) {
 		clarke(Ia,Ib,Ic);
 
@@ -137,6 +151,9 @@ void ADC1_2_IRQHandler(){
 
 		inv_clarke(V_alpha,V_beta);
 
+
+
+
 		duty_a = (Va / V_BUS) + 0.5f;
 		duty_b = (Vb / V_BUS) + 0.5f;
 		duty_c = (Vc / V_BUS) + 0.5f;
@@ -147,7 +164,47 @@ void ADC1_2_IRQHandler(){
 
 
 		setdutycycle(duty_a, duty_b, duty_c);
-}
+}*/
+		if (flag_motor == 2) {
+
+		    // 1. Gerar o Ângulo Artificialmente (Rampa)
+		    angulo_aberto += velocidade_aberta;
+		    if (angulo_aberto >= (2.0f * PI)) angulo_aberto -= (2.0f * PI);
+		    if (angulo_aberto < 0.0f) angulo_aberto += (2.0f * PI);
+
+		    // 2. Calcular Seno e Cosseno desse ângulo artificial
+		    float s = fastsin(angulo_aberto);
+		    float c = fastcos(angulo_aberto);
+
+		    // 3. Transformada Inverse Park
+		    // Vd = 0 (Não queremos alinhar, queremos rodar)
+		    // Vq = Tensão Fixa (A nossa "Força")
+		    // Nota: Aqui aplicamos VOLTAGEM direta, ignoramos o PI de corrente.
+		    float Valpha_t, Vbeta_t;
+
+		    // Park Inverso:
+		    Valpha_t = 0.0f * c - tensao_teste * s;
+		    Vbeta_t  = 0.0f * s + tensao_teste * c;
+
+		    // 4. Transformada Inverse Clarke (SVPWM básico)
+		    // Calcula as tensões das fases A, B, C
+		    float Va_out, Vb_out, Vc_out;
+
+		    Va_out = Valpha_t;
+		    Vb_out = -0.5f * Valpha_t + 0.866025f * Vbeta_t;
+		    Vc_out = -0.5f * Valpha_t - 0.866025f * Vbeta_t;
+
+		    // 5. Converter para Duty Cycle (0.0 a 1.0)
+		    // Assumindo V_BUS (tensão da bateria). Se não tiveres a leitura, mete o valor fixo ex: 12.0f
+		    float vbus_atual = V_BUS;
+
+		    duty_a = (Va_out / vbus_atual) + 0.5f;
+		    duty_b = (Vb_out / vbus_atual) + 0.5f;
+		    duty_c = (Vc_out / vbus_atual) + 0.5f;
+
+		    // 6. Aplicar ao Hardware
+		    setdutycycle(duty_a, duty_b, duty_c);
+		}
     }
 }
 
@@ -176,7 +233,9 @@ void alinharsensor(){
 
 	offset_eletricoglobal=offset_eletrico;
 
-		setdutycycle(0, 0, 0);
+		//setdutycycle(0, 0, 0);
+	setdutycycle(0.5f, 0.5f, 0.5f);
+		while(seconds<4);
 		flag_motor=2;
 }
 
@@ -191,8 +250,11 @@ int main(void)
 	adc_init();
 
 	alinharsensor();
+	offset_eletricoglobal += 1.5708f;
 
-	teste_geracao_onda();
+	    // 3. Normalização Obrigatória
+	    while(offset_eletricoglobal >= 2*PI) offset_eletricoglobal -= 2*PI;
+	    while(offset_eletricoglobal < 0)     offset_eletricoglobal += 2*PI;
 
 	while (1)
   {
