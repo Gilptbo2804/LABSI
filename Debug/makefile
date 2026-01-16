@@ -33,34 +33,34 @@ $(wildcard ../makefile.init) \
 $(wildcard ../makefile.targets) \
 
 
-BUILD_ARTIFACT_NAME := TesteESC2
+BUILD_ARTIFACT_NAME := TesteESC1
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX :=
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME)$(if $(BUILD_ARTIFACT_EXTENSION),.$(BUILD_ARTIFACT_EXTENSION),)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-TesteESC2.elf \
+TesteESC1.elf \
 
 MAP_FILES += \
-TesteESC2.map \
+TesteESC1.map \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-TesteESC2.list \
+TesteESC1.list \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: TesteESC2.elf secondary-outputs
+main-build: TesteESC1.elf secondary-outputs
 
 # Tool invocations
-TesteESC2.elf TesteESC2.map: $(OBJS) $(USER_OBJS) /home/gp/STM32CubeIDE/novo/TesteESC2/STM32G431RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "TesteESC2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/gp/STM32CubeIDE/novo/TesteESC2/STM32G431RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="TesteESC2.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+TesteESC1.elf TesteESC1.map: $(OBJS) $(USER_OBJS) /home/gp/STM32CubeIDE/novo/TesteESC1/STM32G431RBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "TesteESC1.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/gp/STM32CubeIDE/novo/TesteESC1/STM32G431RBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="TesteESC1.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -69,14 +69,14 @@ default.size.stdout: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-TesteESC2.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "TesteESC2.list"
+TesteESC1.list: $(EXECUTABLES) makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "TesteESC1.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) TesteESC2.elf TesteESC2.list TesteESC2.map default.size.stdout
+	-$(RM) TesteESC1.elf TesteESC1.list TesteESC1.map default.size.stdout
 	-@echo ' '
 
 secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)

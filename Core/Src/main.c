@@ -24,8 +24,8 @@ Ratio = VOLTS/Hz(max)= 14.8/1628 = 0.007789
 #define OFFSET 1260
 
 
-#define ADC_MIN_VAL   184.0f    // Leitura a 0 graus
-#define ADC_MAX_VAL   3742.0f   // Leitura a 360 graus
+#define ADC_MIN_VAL   7.0f    // Leitura a 0 graus
+#define ADC_MAX_VAL   4095.0f   // Leitura a 360 graus
 #define ADC_RANGE     (ADC_MAX_VAL - ADC_MIN_VAL) // = 3558.0f
 #define PARPOLOS 7
 
@@ -66,10 +66,10 @@ volatile float Ib = 0.0f;
 volatile float Ic = 0.0f;
 volatile float Posgraus = 0.0f;
 volatile float pos_temp = 0.0f;
-volatile float OffsetIa=0.157672867,OffsetIb=0.172648802,OffsetIc=0.203955188,debugPos=0;
+volatile float OffsetIa=-0.101173162,OffsetIb=-0.0996201262,OffsetIc=-0.117147371,debugPos=0;
 volatile float theta_mec=0.0f,theta_e=0.0f;
 volatile float testecorrentes=0;
-volatile float duty_a,duty_b,duty_c;
+volatile float duty_a,duty_b,duty_c,debugPos;
 
 
 volatile float angulo_aberto = 0.0f;
@@ -99,13 +99,12 @@ void ADC1_2_IRQHandler(){
 		debugPos=adc_Pos;
 		*/
 
-
-
+        debugPos=adc_Pos;
 		Ia=-(((float)(adc_Ia) * 0.029373) - 73.844224357467);
 		Ib=-(((float)adc_Ib * 0.029373) - 73.668130469894);
 		Ic=-(((float)adc_Ic * 0.029373) - 73.785526394942);
 
-		/*
+/*
 		if (flag_motor==2){
 		OffsetIa=0.000001*Ia+(1-0.000001)*OffsetIa;
 		OffsetIb=0.000001*Ib+(1-0.000001)*OffsetIb;
@@ -118,7 +117,7 @@ void ADC1_2_IRQHandler(){
 
 //fusível por software
 		if (flag_motor == 2) {
-		    if (Ia > 6.0f || Ia < -6.0f || Ib > 6.0f || Ib < -6.0f) {
+		    if (Ia > 10.0f || Ia < -10.0f || Ib > 10.0f || Ib < -10.0f) {
 		        flag_motor = 0;
 		        setdutycycle(0.5f, 0.5f, 0.5f);
 		        TIM1->BDTR &= ~TIM_BDTR_MOE;
@@ -130,8 +129,6 @@ void ADC1_2_IRQHandler(){
 		//pos_temp=0.1*adc_Pos+(1-0.10)*pos_temp;
 		pos_temp=adc_Pos;
 
-		if (pos_temp < ADC_MIN_VAL) pos_temp = ADC_MIN_VAL;
-		if (pos_temp > ADC_MAX_VAL) pos_temp = ADC_MAX_VAL;
 
 		//debug
 		Posgraus = (pos_temp - ADC_MIN_VAL) * (360.0f / (ADC_MAX_VAL - ADC_MIN_VAL));
@@ -148,6 +145,7 @@ void ADC1_2_IRQHandler(){
 // FOC
 
 		if (flag_motor == 2) {
+
 		clarke(Ia,Ib,Ic);
 
 		parke(I_alpha,I_beta,fastsin(theta_e),fastcos(theta_e));
@@ -171,6 +169,12 @@ void ADC1_2_IRQHandler(){
 
 
 		setdutycycle(duty_a, duty_b, duty_c);
+		if (seconds == 10) {
+				        setdutycycle(0.5f, 0.5f, 0.5f);
+				        TIM1->BDTR &= ~TIM_BDTR_MOE;
+				        while(1); // Morte térmica do código
+
+				}
 			}
 		}
 }
@@ -200,8 +204,7 @@ void alinharsensor(){
 
 	offset_eletricoglobal=offset_eletrico;
 
-		//setdutycycle(0, 0, 0);
-	//setdutycycle(0.5f, 0.5f, 0.5f);
+
 		while(seconds<3);
 		flag_motor=2;
 }
@@ -216,21 +219,22 @@ int main(void)
 	opamp_init();
 	adc_init();
 
-	/*alinharsensor();
+	//alinharsensor();
 
-	offset_eletricoglobal += 1.57f;
+/*
+	offset_eletricoglobal -= 1.57f; //rapido 5.9334445
 
 	    // Normalização
 	    while(offset_eletricoglobal >= 2*PI) offset_eletricoglobal -= 2*PI;
 	    while(offset_eletricoglobal < 0)     offset_eletricoglobal += 2*PI;
 */
+
 	setdutycycle(0.53f, 0.48f, 0.48f);
-	while(seconds<2);
-	//offset_eletricoglobal=2.8308754f;
-	offset_eletricoglobal=2.1308754f;
-
-
+	while(seconds<10);
+	offset_eletricoglobal=2.6308754f;
 	flag_motor=2;
+	seconds=0;
+
 
 
 	while (1)
