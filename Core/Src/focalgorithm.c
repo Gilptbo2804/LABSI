@@ -51,7 +51,7 @@ void inv_clarke(float V_alpha, float V_beta) {
 float V_d, V_q;
 float Id_ref = 0.0f;
 float Iq_ref = 1.5f; // 2 Amperes de força
-// Ganhos do PI (Têm de ser sintonizados!) kp=0.01 ki=0.005
+// Ganhos do PI (Têm de ser sintonizados!) kp=0.01 ki=0.001
 float Kp = 0.1f, Ki = 0.001f;
 float integral_d = 0, integral_q = 0;
 

@@ -66,10 +66,10 @@ volatile float Ib = 0.0f;
 volatile float Ic = 0.0f;
 volatile float Posgraus = 0.0f;
 volatile float pos_temp = 0.0f;
-volatile float OffsetIa=0.157672867,OffsetIb=0.172648802,OffsetIc=0.203955188,debugPos=0;
+volatile float OffsetIa=-0.101173162,OffsetIb=-0.0996201262,OffsetIc=-0.117147371,debugPos=0;
 volatile float theta_mec=0.0f,theta_e=0.0f;
 volatile float testecorrentes=0;
-volatile float duty_a,duty_b,duty_c;
+volatile float duty_a,duty_b,duty_c,debugPos;
 
 
 volatile float angulo_aberto = 0.0f;
@@ -98,14 +98,13 @@ void ADC1_2_IRQHandler(){
 		debugIc=adc_Ic;
 		debugPos=adc_Pos;
 		*/
-
-
+        debugPos=adc_Pos;
 
 		Ia=-(((float)(adc_Ia) * 0.029373) - 73.844224357467);
 		Ib=-(((float)adc_Ib * 0.029373) - 73.668130469894);
 		Ic=-(((float)adc_Ic * 0.029373) - 73.785526394942);
 
-		/*
+/*
 		if (flag_motor==2){
 		OffsetIa=0.000001*Ia+(1-0.000001)*OffsetIa;
 		OffsetIb=0.000001*Ib+(1-0.000001)*OffsetIb;
@@ -118,7 +117,7 @@ void ADC1_2_IRQHandler(){
 
 //fusível por software
 		if (flag_motor == 2) {
-		    if (Ia > 6.0f || Ia < -6.0f || Ib > 6.0f || Ib < -6.0f) {
+		    if (Ia > 8.0f || Ia < -8.0f || Ib > 8.0f || Ib < -8.0f) {
 		        flag_motor = 0;
 		        setdutycycle(0.5f, 0.5f, 0.5f);
 		        TIM1->BDTR &= ~TIM_BDTR_MOE;
@@ -177,7 +176,6 @@ void ADC1_2_IRQHandler(){
 
 
 
-
 void alinharsensor(){
 
 	flag_motor=1;
@@ -200,43 +198,32 @@ void alinharsensor(){
 
 	offset_eletricoglobal=offset_eletrico;
 
-		//setdutycycle(0, 0, 0);
-	//setdutycycle(0.5f, 0.5f, 0.5f);
+
 		while(seconds<3);
 		flag_motor=2;
 }
 
 int main(void)
 {
-	clockinit();
-	clk_freq= SystemCoreClock;
-	init();
-	timer1init();
-	timer7init();
-	opamp_init();
-	adc_init();
-
-	/*alinharsensor();
-
-	offset_eletricoglobal += 1.57f;
-
-	    // Normalização
-	    while(offset_eletricoglobal >= 2*PI) offset_eletricoglobal -= 2*PI;
-	    while(offset_eletricoglobal < 0)     offset_eletricoglobal += 2*PI;
-*/
-	setdutycycle(0.53f, 0.48f, 0.48f);
-	while(seconds<2);
-	//offset_eletricoglobal=2.8308754f;
-	offset_eletricoglobal=2.1308754f;
+    clockinit();
+    clk_freq= SystemCoreClock;
+    init();
+    timer1init();
+    timer7init();
+    opamp_init();
+    adc_init();
 
 
-	flag_motor=2;
+    setdutycycle(0.53f, 0.48f, 0.48f);
+    while(seconds<2);
+    offset_eletricoglobal=2.0308754f;
+
+    flag_motor=2;
 
 
-	while (1)
-  {
-//empt
 
-  }
-
+    while (1)
+    {
+        // O loop fica vazio, a magia acontece nas interrupções
+    }
 }
