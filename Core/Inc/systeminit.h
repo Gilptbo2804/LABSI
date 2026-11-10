@@ -145,14 +145,14 @@ void init(){
 	GPIOB->MODER &= ~(0x3 << GPIO_MODER_MODE12_Pos);
 	GPIOB->MODER |= (0b11 << GPIO_MODER_MODE12_Pos);
 
-	//swd debug
+// UART, de momento não está em uso
+	GPIOB->MODER &= ~(0x3 << GPIO_MODER_MODE3_Pos);
+	GPIOB->MODER |= (0b11 << GPIO_MODER_MODE3_Pos);
+	GPIOB->AFR[0] |=  0b0111 << GPIO_AFRL_AFSEL7_Pos;
 
-	// Configurar PB3 como Alternate Function (AF)
-	GPIOB->MODER &= ~GPIO_MODER_MODE3;      // Limpa bits
-	GPIOB->MODER |= 0b10 << GPIO_MODER_MODE3_Pos;     // Mete em modo AF (10)
-
-	// Configurar a AF correta (AF0 é normalmente o SWO/JTDO no G431)
-	GPIOB->AFR[0] |= 0b0000 << GPIO_AFRL_AFSEL0_Pos;     // Limpa e seleciona AF0
+	GPIOB->MODER &= ~(0x3 << GPIO_MODER_MODE4_Pos);
+	GPIOB->MODER |= (0b11 << GPIO_MODER_MODE4_Pos);
+	GPIOB->AFR[0] |=  0b0111 << GPIO_AFRL_AFSEL7_Pos;
 
 }
 
